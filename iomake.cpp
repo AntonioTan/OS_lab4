@@ -19,6 +19,8 @@ void printInput();
 class Scheduler;
 class FIFO;
 class SSTF;
+class LOOK;
+class CLOOK;
 
 typedef struct {
     int id;
@@ -30,7 +32,7 @@ typedef struct {
     int wait_time;
 } request;
 
-string INPUT_FILE = "./lab4_assign 2/input9";
+string INPUT_FILE = "./lab4_assign 2/input8";
 deque<request> request_l;
 Scheduler* SCHEDULER;
 request* CURRENT_REQ;
@@ -108,6 +110,48 @@ class LOOK : public Scheduler {
                             continue;
                         }
                         if(abs(IO_queue[i]->track-head)<abs(IO_queue[index]->track-head)) {
+                            index = i;
+                        }
+                    }
+                }
+                request* req = IO_queue[index]; 
+                IO_queue.erase(IO_queue.begin()+index);
+                return req;
+                
+            }
+        }
+};
+
+class CLOOK : public Scheduler {
+    public:
+        request* get_next_request() {
+            if(IO_queue.empty()) {
+                return NULL;
+            } else {
+                int index = -1;
+                dir = 1;
+                for(int i=0; i<IO_queue.size(); i++) {
+                    request* req = IO_queue.at(i);
+                    if(dir*(req->track-head)<0) {
+                        continue;
+                    }
+                    if(index==-1) {
+                        index = i;
+                        continue;
+                    }
+                    if(abs(IO_queue[i]->track-head)<abs(IO_queue[index]->track-head)) {
+                        index = i;
+                    }
+                }
+                int fakeHead = 0;
+                if(index==-1) {
+                    for(int i=0; i<IO_queue.size(); i++) {
+                        request* req = IO_queue.at(i);
+                        if(index==-1) {
+                            index = i;
+                            continue;
+                        }
+                        if(abs(IO_queue[i]->track-fakeHead)<abs(IO_queue[index]->track-fakeHead)) {
                             index = i;
                         }
                     }
@@ -215,7 +259,7 @@ int main(int argc, char *argv[]) {
         getline(inputFile, line, '\n');
     }
     inputFile.close();
-    SCHEDULER = new LOOK();
+    SCHEDULER = new CLOOK();
     Simulation();
     Summary();
     // printInput();
