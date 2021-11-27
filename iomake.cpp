@@ -39,6 +39,7 @@ int req_total = 0;
 int total_move = 0;
 int total_time = 0;
 int head = 0;
+int dir = 1;
 
 class Scheduler {
     public: 
@@ -79,6 +80,46 @@ class SSTF : public Scheduler {
         }
 };
 
+class LOOK : public Scheduler {
+    public:
+        request* get_next_request() {
+            if(IO_queue.empty()) {
+                return NULL;
+            } else {
+                int index = -1;
+                for(int i=0; i<IO_queue.size(); i++) {
+                    request* req = IO_queue.at(i);
+                    if(dir*(req->track-head)<0) {
+                        continue;
+                    }
+                    if(index==-1) {
+                        index = i;
+                        continue;
+                    }
+                    if(abs(IO_queue[i]->track-head)<abs(IO_queue[index]->track-head)) {
+                        index = i;
+                    }
+                }
+                if(index==-1) {
+                    for(int i=0; i<IO_queue.size(); i++) {
+                        request* req = IO_queue.at(i);
+                        if(index==-1) {
+                            index = i;
+                            continue;
+                        }
+                        if(abs(IO_queue[i]->track-head)<abs(IO_queue[index]->track-head)) {
+                            index = i;
+                        }
+                    }
+                }
+                request* req = IO_queue[index]; 
+                IO_queue.erase(IO_queue.begin()+index);
+                return req;
+                
+            }
+        }
+};
+
 void printInput() {
     for(int i=0; i<request_l.size(); i++) {
         request req = request_l.at(i);
@@ -88,7 +129,6 @@ void printInput() {
 
 void Simulation() {
     int get_cnt = 0;
-    int dir = -1;
     while(true) {
         if(get_cnt<req_total) {
             request* req = &request_l.at(get_cnt);
@@ -116,20 +156,20 @@ void Simulation() {
                 } else if(CURRENT_REQ->track<head){
                     dir = -1;
                 } else {
-                    dir = 0;
-                    // CURRENT_REQ->end_time = total_time;
-                    // CURRENT_REQ->wait_time = CURRENT_REQ->start_time-CURRENT_REQ->arrival_time;
-                    // CURRENT_REQ->turnaround = CURRENT_REQ->end_time-CURRENT_REQ->arrival_time;
-                    // CURRENT_REQ = NULL;
-                    // req_cnt++;
+                    CURRENT_REQ->end_time = total_time;
+                    CURRENT_REQ->wait_time = CURRENT_REQ->start_time-CURRENT_REQ->arrival_time;
+                    CURRENT_REQ->turnaround = CURRENT_REQ->end_time-CURRENT_REQ->arrival_time;
+                    CURRENT_REQ = NULL;
+                    req_cnt++;
+                    continue;
                 }
             }
         }
         if(CURRENT_REQ!=NULL) {
             head += (1*dir);
-            total_move += (1*abs(dir));
+            total_move += 1;
         }
-        if(dir!=0) total_time++;
+        total_time++;
     }
     for(int i=0; i<req_total; i++) {
         request *req = &request_l[i];
@@ -175,7 +215,7 @@ int main(int argc, char *argv[]) {
         getline(inputFile, line, '\n');
     }
     inputFile.close();
-    SCHEDULER = new SSTF();
+    SCHEDULER = new LOOK();
     Simulation();
     Summary();
     // printInput();
