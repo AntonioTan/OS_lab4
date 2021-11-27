@@ -21,6 +21,7 @@ class FIFO;
 class SSTF;
 class LOOK;
 class CLOOK;
+class FLOOK;
 
 typedef struct {
     int id;
@@ -32,7 +33,7 @@ typedef struct {
     int wait_time;
 } request;
 
-string INPUT_FILE = "./lab4_assign 2/input8";
+string INPUT_FILE = "./lab4_assign 2/input9";
 deque<request> request_l;
 Scheduler* SCHEDULER;
 request* CURRENT_REQ;
@@ -176,9 +177,56 @@ class CLOOK : public Scheduler {
         }
 };
 
-// class FLOOK : public Scheduler {
+class FLOOK : public Scheduler {
+    public:
+        deque<request *> *active_queue;
+        FLOOK() {
+            IO_queue = new deque<request *>();
+            active_queue = new deque<request *>();
+        }
+        request* get_next_request() {
+            if(active_queue->empty()) {
+                deque<request *> *temp = active_queue;
+                active_queue = IO_queue;
+                IO_queue = temp;
+                if(active_queue->empty()) {
+                    return NULL;
+                }
+            }
+            int index = -1;
+            for(int i=0; i<active_queue->size(); i++) {
+                request* req = active_queue->at(i);
+                if(dir*(req->track-head)<0) {
+                    continue;
+                }
+                if(index==-1) {
+                    index = i;
+                    continue;
+                }
+                if(abs(active_queue->at(i)->track-head)<abs(active_queue->at(index)->track-head)) {
+                    index = i;
+                }
+            }
+            if(index==-1) {
+                for(int i=0; i<active_queue->size(); i++) {
+                    request* req = active_queue->at(i);
+                    if(index==-1) {
+                        index = i;
+                        continue;
+                    }
+                    if(abs(active_queue->at(i)->track-head)<abs(active_queue->at(index)->track-head)) {
+                        index = i;
+                    }
+                }
+            }
+            request* req = active_queue->at(index); 
+            active_queue->erase(active_queue->begin()+index);
+            return req;
+                
 
-// };
+        }
+
+};
 
 void printInput() {
     for(int i=0; i<request_l.size(); i++) {
@@ -275,7 +323,7 @@ int main(int argc, char *argv[]) {
         getline(inputFile, line, '\n');
     }
     inputFile.close();
-    SCHEDULER = new CLOOK();
+    SCHEDULER = new FLOOK();
     Simulation();
     Summary();
     // printInput();
