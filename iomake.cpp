@@ -45,18 +45,21 @@ int dir = 1;
 
 class Scheduler {
     public: 
-        deque<request *> IO_queue;
+        deque<request *> *IO_queue;
         virtual request* get_next_request() = 0;
 };
 
 class FIFO : public Scheduler {
     public:
+        FIFO() {
+            IO_queue = new deque<request *>();
+        }
         request* get_next_request() {
-            if(IO_queue.empty()) {
+            if(IO_queue->empty()) {
                 return NULL;
             } else {
-                request* req = IO_queue.front();
-                IO_queue.pop_front();
+                request* req = IO_queue->front();
+                IO_queue->pop_front();
                 return req;
             }
         }
@@ -64,18 +67,21 @@ class FIFO : public Scheduler {
 
 class SSTF : public Scheduler {
     public:
+        SSTF() {
+            IO_queue = new deque<request *>();
+        }
         request* get_next_request() {
-            if(IO_queue.empty()) {
+            if(IO_queue->empty()) {
                 return NULL;
             } else {
                 int index = 0;
-                for(int i=1; i<IO_queue.size(); i++) {
-                    if(abs(IO_queue[i]->track-head)<abs(IO_queue[index]->track-head)) {
+                for(int i=1; i<IO_queue->size(); i++) {
+                    if(abs(IO_queue->at(i)->track-head)<abs(IO_queue->at(index)->track-head)) {
                         index = i;
                     }
                 }
-                request* req = IO_queue[index];
-                IO_queue.erase(IO_queue.begin()+index);
+                request* req = IO_queue->at(index);
+                IO_queue->erase(IO_queue->begin()+index);
                 return req;
             }
 
@@ -84,13 +90,16 @@ class SSTF : public Scheduler {
 
 class LOOK : public Scheduler {
     public:
+        LOOK() {
+            IO_queue = new deque<request *>();
+        }
         request* get_next_request() {
-            if(IO_queue.empty()) {
+            if(IO_queue->empty()) {
                 return NULL;
             } else {
                 int index = -1;
-                for(int i=0; i<IO_queue.size(); i++) {
-                    request* req = IO_queue.at(i);
+                for(int i=0; i<IO_queue->size(); i++) {
+                    request* req = IO_queue->at(i);
                     if(dir*(req->track-head)<0) {
                         continue;
                     }
@@ -98,24 +107,24 @@ class LOOK : public Scheduler {
                         index = i;
                         continue;
                     }
-                    if(abs(IO_queue[i]->track-head)<abs(IO_queue[index]->track-head)) {
+                    if(abs(IO_queue->at(i)->track-head)<abs(IO_queue->at(index)->track-head)) {
                         index = i;
                     }
                 }
                 if(index==-1) {
-                    for(int i=0; i<IO_queue.size(); i++) {
-                        request* req = IO_queue.at(i);
+                    for(int i=0; i<IO_queue->size(); i++) {
+                        request* req = IO_queue->at(i);
                         if(index==-1) {
                             index = i;
                             continue;
                         }
-                        if(abs(IO_queue[i]->track-head)<abs(IO_queue[index]->track-head)) {
+                        if(abs(IO_queue->at(i)->track-head)<abs(IO_queue->at(index)->track-head)) {
                             index = i;
                         }
                     }
                 }
-                request* req = IO_queue[index]; 
-                IO_queue.erase(IO_queue.begin()+index);
+                request* req = IO_queue->at(index); 
+                IO_queue->erase(IO_queue->begin()+index);
                 return req;
                 
             }
@@ -124,14 +133,17 @@ class LOOK : public Scheduler {
 
 class CLOOK : public Scheduler {
     public:
+        CLOOK() {
+            IO_queue = new deque<request *>();
+        }
         request* get_next_request() {
-            if(IO_queue.empty()) {
+            if(IO_queue->empty()) {
                 return NULL;
             } else {
                 int index = -1;
                 dir = 1;
-                for(int i=0; i<IO_queue.size(); i++) {
-                    request* req = IO_queue.at(i);
+                for(int i=0; i<IO_queue->size(); i++) {
+                    request* req = IO_queue->at(i);
                     if(dir*(req->track-head)<0) {
                         continue;
                     }
@@ -139,30 +151,34 @@ class CLOOK : public Scheduler {
                         index = i;
                         continue;
                     }
-                    if(abs(IO_queue[i]->track-head)<abs(IO_queue[index]->track-head)) {
+                    if(abs(IO_queue->at(i)->track-head)<abs(IO_queue->at(index)->track-head)) {
                         index = i;
                     }
                 }
                 int fakeHead = 0;
                 if(index==-1) {
-                    for(int i=0; i<IO_queue.size(); i++) {
-                        request* req = IO_queue.at(i);
+                    for(int i=0; i<IO_queue->size(); i++) {
+                        request* req = IO_queue->at(i);
                         if(index==-1) {
                             index = i;
                             continue;
                         }
-                        if(abs(IO_queue[i]->track-fakeHead)<abs(IO_queue[index]->track-fakeHead)) {
+                        if(abs(IO_queue->at(i)->track-fakeHead)<abs(IO_queue->at(index)->track-fakeHead)) {
                             index = i;
                         }
                     }
                 }
-                request* req = IO_queue[index]; 
-                IO_queue.erase(IO_queue.begin()+index);
+                request* req = IO_queue->at(index); 
+                IO_queue->erase(IO_queue->begin()+index);
                 return req;
                 
             }
         }
 };
+
+// class FLOOK : public Scheduler {
+
+// };
 
 void printInput() {
     for(int i=0; i<request_l.size(); i++) {
@@ -177,7 +193,7 @@ void Simulation() {
         if(get_cnt<req_total) {
             request* req = &request_l.at(get_cnt);
             if(total_time==req->arrival_time) {
-                SCHEDULER->IO_queue.push_back(req);
+                SCHEDULER->IO_queue->push_back(req);
                 get_cnt++;
             }
         }
