@@ -33,8 +33,9 @@ typedef struct {
     int wait_time;
 } request;
 
-string INPUT_FILE = "./lab4_assign 2/input9";
+string INPUT_FILE;
 deque<request> request_l;
+char* SCHEDULER_TYPE;
 Scheduler* SCHEDULER;
 request* CURRENT_REQ;
 int req_cnt = 0;
@@ -43,6 +44,9 @@ int total_move = 0;
 int total_time = 0;
 int head = 0;
 int dir = 1;
+bool WHETHER_VERBOSE=false;
+bool WHETHER_QUEUE=false;
+bool WHETHER_FLOOK=false;
 
 class Scheduler {
     public: 
@@ -300,6 +304,43 @@ void Summary() {
 int main(int argc, char *argv[]) {
     string line = "#";
     fstream inputFile;
+    int c;
+    opterr=0;
+    while ((c = getopt (argc, argv, "vqfs:")) != -1) {
+        switch (c)
+        {
+        case 'v':
+            WHETHER_VERBOSE = true;
+            break;
+        case 'q':
+            WHETHER_QUEUE = true;
+            break;
+        case 'f':
+            WHETHER_FLOOK = true;
+            break;
+        case 's':
+            SCHEDULER_TYPE = optarg;
+            break;
+        }
+    }
+    if(optind<argc) {
+        INPUT_FILE = argv[optind];
+    } else {
+        cout << "Missing Input File!" << endl;
+        return 0;
+    }
+    if(strcmp(SCHEDULER_TYPE,"i")==0) {
+        SCHEDULER = new FIFO();
+    } else if (strcmp(SCHEDULER_TYPE,"j")==0) {
+        SCHEDULER = new SSTF();
+    } else if (strcmp(SCHEDULER_TYPE,"s")==0) {
+        SCHEDULER = new LOOK();
+    } else if (strcmp(SCHEDULER_TYPE,"c")==0) {
+        SCHEDULER = new CLOOK();
+    } else if (strcmp(SCHEDULER_TYPE,"f")==0) {
+        SCHEDULER = new FLOOK();
+    }
+
     inputFile.open(INPUT_FILE, fstream::in);
     while(line.at(0)=='#') {
         getline(inputFile, line, '\n');
@@ -323,7 +364,6 @@ int main(int argc, char *argv[]) {
         getline(inputFile, line, '\n');
     }
     inputFile.close();
-    SCHEDULER = new FLOOK();
     Simulation();
     Summary();
     // printInput();
